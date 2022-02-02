@@ -101,3 +101,11 @@ Run the command in cli
   ```bash
     npm run test-debug
   ```
+
+## Create documentation
+
+Run the command in cli
+
+  ```bash
+    npm run doc
+  ```

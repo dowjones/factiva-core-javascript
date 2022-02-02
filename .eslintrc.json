@@ -13,6 +13,7 @@
   "parserOptions": {
     "ecmaVersion": 2018
   },
+  "object-curly-newline": "off",
   "rules": {
     "comma-dangle": [2, "always-multiline"],
     "prettier/prettier": "error",

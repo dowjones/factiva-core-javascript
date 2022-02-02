@@ -1,8 +1,45 @@
-/* eslint-disable operator-linebreak */
+/**
+ *  @module factiva/core/auth/UserKey
+ */
+
 import helper from '../../helper';
 import constants from '../constants';
 
+/**
+ * Extract Object
+ * @typedef {Object} Extraction
+ * @type {object}
+ * @property {string} objectID - Object id
+ * @property {string} currentState - Current state
+ * @property {string} format - format
+ * @property {string} extractionType  - Extraction type
+ * @property {string} snapshootSid - Snapshoot id
+ * @property {string} updateId - Update id
+ */
+/**
+ * Stream object
+ * @typedef {Object} Stream
+ * @type {object}
+ * @property {string} objectId - Object id
+ * @property {string} jobStatus - Job status
+ * @property {string} streamId - Stream id
+ * @property {string} streamType  - Stream type
+ * @property {string} relatedSubscriptions - Related subscriptions
+ * @property {number} nSubscriptions - Number of related subscriptions
+ */
+
+/**
+ * Auth headers
+ * @typedef {Object} AutenticationHeaders
+ * @type {object}
+ * @property {string} user-key - User key
+ */
+
+/** Class used to get information about a user */
 class UserKey {
+  /** Constructor
+   * @param {string} key - User key
+   */
   constructor(key = '') {
     if (key instanceof UserKey) {
       return key;
@@ -14,11 +51,9 @@ class UserKey {
 
   /**
    * Validate key used for factiva auth
-   * @example
-   * this.validateKey(key);
-   * @throws {TypeError} when the key len isn't valid
+   * @param {string} key - Key value
+   * @throws {TypeError} When the key len isn't valid
    */
-  // eslint-disable-next-line class-methods-use-this
   validateKey(key) {
     if (typeof key !== 'string' && key.length !== 32) {
       throw TypeError('Invalid length for API Key');
@@ -27,8 +62,7 @@ class UserKey {
 
   /**
    * Set api key in the class
-   * @example
-   * this.setApiKey(key);
+   * @param {string} key - Key value
    * @return {TypeError} when the key len isn't valid
    */
   setApiKey(key) {
@@ -37,11 +71,7 @@ class UserKey {
     this.key = loadedKey;
   }
 
-  /**
-   * Set default information in the class
-   * @example
-   * this.setInfoDefault();
-   */
+  /** Set default information in the class */
   setInfoToDefault() {
     this.cloudToken = {};
     this.accountName = '';
@@ -61,8 +91,7 @@ class UserKey {
 
   /**
    * Set information in the class
-   * @example
-   * this.setInfo(Promise);
+   * @param {boolean} requestInfo - Flag to determine if the info from the user needs to be found and set
    */
   async setInfo(requestInfo) {
     if (!requestInfo) {
@@ -81,10 +110,10 @@ class UserKey {
       this.accountName = attributes.name;
       this.accountType = accountResponse.type;
       this.activeProducts = attributes.products;
-      // eslint-disable-next-line
-      this.maxAllowedConcurrentExtractions = attributes.max_allowed_concurrent_extracts;
-      // eslint-disable-next-line
-      this.maxAllowedExtractedDocuments = attributes.max_allowed_document_extracts;
+      this.maxAllowedConcurrentExtractions =
+        attributes.max_allowed_concurrent_extracts;
+      this.maxAllowedExtractedDocuments =
+        attributes.max_allowed_document_extracts;
       this.maxAllowedExtractions = attributes.max_allowed_extracts;
       this.currentlyRunningExtractions = attributes.cnt_curr_ext;
       this.totalDownloadedBytes = attributes.current_downloaded_amount;
@@ -98,10 +127,7 @@ class UserKey {
 
   /**
    * Return a number of remaining extractions
-   * @example
-   * 10
-   * this.remainingExtractions;
-   * @returns {number} which represents total documents extractions
+   * @type {number}
    */
   get remainingExtractions() {
     return this.maxAllowedExtractions - this.totalExtractions;
@@ -109,10 +135,7 @@ class UserKey {
 
   /**
    * Return a number of remaining documents
-   * @example
-   * 10
-   * this.remainingDocuments;
-   * @returns {number} which represents total documents available
+   * @type {number}
    */
   get remainingDocuments() {
     return this.maxAllowedExtractedDocuments - this.totalExtractedDocuments;
@@ -123,9 +146,7 @@ class UserKey {
    * @param {boolean} [detailed=true] - Specify if get all content
    * @param {string} [prefix=  |-] - Graphical separator for each element
    * @param {string} [rootPrefix=] - Graphical separator for root element
-   * @example
-   * UserKey.toString()
-   * @returns {string} which represents total extractions available
+   * @returns {string} Represents total extractions available
    */
   toString(detailed = true, prefix = '  |-', rootPrefix = '') {
     const maskedKey = helper.maskWord(this.key);
@@ -154,10 +175,7 @@ class UserKey {
 
   /**
    * Request a cloud token to the API and saves its value in the cloud_token property
-   * @example
-   * UserKey.getCloudToken();
-   * @return {Boolean} True if the operation was completed successfully. Calculate value
-        is assigned to the cloud_token property.
+   * @return {Boolean} True if the operation was completed successfully. Calculate value  is assigned to the cloud_token property.
    */
   async getCloudToken() {
     const accountEndpoint = `${constants.API_HOST}${constants.API_ACCOUNT_STREAM_CREDENTIALS_BASEPATH}`;
@@ -176,9 +194,7 @@ class UserKey {
 
   /**
    * Request a list of the extractions of the account
-   * @example
-   * UserKey.getExtractions();
-   * @return {Object} Object containing the list of historical extractions for the account
+   * @return {Extraction[]} Object containing the list of historical extractions for the account
    */
   async getExtractions() {
     const extractionsEndpoint = `${constants.API_HOST}${constants.API_EXTRACTIONS_BASEPATH}`;
@@ -216,16 +232,11 @@ class UserKey {
 
   /**
    * Show a list of the extractions of the account
-   *@param {boolean} [updates=false] - Flag that indicates whether the displayed list should include (True)
-   or not (False) Snapshot Update calls.
-   * @example
-   * UserKey.showExtractions();
-   * @return {Object} Object with the list of historical extractions
+   * @param {boolean} [updates=false] - Flag that indicates whether the displayed list should include (True) or not (False) Snapshot Update calls.
    */
   async showExtractions(updates = false) {
     const extractions = await this.getExtractions();
     let mappedExtractions = extractions.map(
-      // eslint-disable-next-line object-curly-newline
       ({ currentState, format, extractionType, snapshootSid, updateId }) => ({
         currentState,
         format,
@@ -244,9 +255,7 @@ class UserKey {
 
   /**
    * Obtain streams from a given user
-   * @example
-   * UserKey.getStreams();
-   * @return {Object} Object containing the list of historical extractions for the account
+   * @return {Stream[]} Object containing the list of historical extractions for the account
    */
   async getStreams() {
     const extractionsEndpoint = `${constants.API_HOST}${constants.API_STREAMS_BASEPATH}`;
@@ -298,17 +307,13 @@ class UserKey {
 
   /**
    * Shows the list of streams for a given user.
-   * @param {boolean} [running=false] - Flag that indicates whether the displayed list should be restricted
+   * @param {boolean} [running=true] - Flag that indicates whether the displayed list should be restricted
    * to only running streams (True) or also include cancelled and failed
    * ones (False).
-   * @example
-   * UserKey.showStreams();
-   * @return {Object} Object with the list of historical extractions
    */
   async showStreams(running = true) {
     const extractions = await this.getStreams();
     let mappedStreams = extractions.map(
-      // eslint-disable-next-line object-curly-newline
       ({ jobStatus, streamId, streamType, subscriptions, nSubscriptions }) => ({
         jobStatus,
         streamId,
@@ -327,11 +332,9 @@ class UserKey {
 
   /**
    * Return a new object UserKey
-   * @param {string} key
-   * @param {boolean} requestInfo
-   * @example
-   * UserKey.create(key, requestInfo);
-   * @returns {Object} which is an instance of UserKey
+   * @param {string} [key=] - User key
+   * @param {boolean} [requestInfo=true] - Flag that indicates whether the displayed list should include (True) or not (False) Snapshot Update calls.
+   * @returns {UserKey} Instance of UserKey
    */
   static async create(key = '', requestInfo = true) {
     if (key instanceof UserKey) {
@@ -346,10 +349,8 @@ class UserKey {
 
   /**
    * Return the current auhtentication headers.
-   * @example
-   * this.getAuthenticationHeaders();
-   * @returns {Object} json with User Key
-   * @returns {ReferenceError} if the credentials are not found
+   * @returns {AutenticationHeaders} Object with User Key
+   * @throws {ReferenceError} if the credentials are not found
    */
   getAuthenticationHeaders() {
     if (this.key) {
@@ -364,4 +365,5 @@ class UserKey {
   }
 }
 
+/** Module used to get information about a user */
 module.exports = UserKey;

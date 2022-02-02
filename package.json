@@ -1,7 +1,7 @@
 {
   "name": "@factiva/core",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.2.0",
+  "description": "Module of factiva core",
   "main": "lib/factiva/index.js",
   "scripts": {
     "start": "node src/factiva/index.js",
@@ -9,7 +9,8 @@
     "babel": "./node_modules/.bin/babel src --out-dir lib",
     "lint": "eslint src/**",
     "lint-fix": "eslint --fix --ext .js,.jsx .",
-    "test-debug": "npm run babel && npm run test"
+    "test-debug": "npm run babel && npm run test",
+    "doc": "./node_modules/.bin/jsdoc -c jsdoc.json"
   },
   "keywords": [],
   "author": "",

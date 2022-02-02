@@ -1,0 +1,24 @@
+{
+  "source": {
+    "include": [
+      "src/factiva/",
+      "README.md",
+      "package.json"
+    ],
+    "includePattern": ".js$",
+    "excludePattern": "(node_modules/|docs)"
+  },
+  "plugins": [
+    "plugins/markdown"
+  ],
+  "templates": {
+    "cleverLinks": true,
+    "monospaceLinks": true
+  },
+  "opts": {
+    "recurse": true,
+    "destination": "./docs/"
+  },
+  "sourceType": "module",
+  "recurseDepth": 10
+}
