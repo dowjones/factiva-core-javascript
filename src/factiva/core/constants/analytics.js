@@ -26,6 +26,29 @@ const API_DATETIME_FIELDS = [
   API_INGESTION_DATETIME_FIELD,
 ];
 
+const API_GROUP_DIMENSIONS_FIELDS = [
+  'source_code',
+  'subject_codes',
+  'region_codes',
+  'industry_codes',
+  'company_codes',
+  'person_codes',
+  'company_codes_about',
+  'company_codes_relevance',
+  'company_codes_cusip',
+  'company_codes_isin',
+  'company_codes_sedol',
+  'company_codes_ticker',
+  'company_codes_about_cusip',
+  'company_codes_about_isin',
+  'company_codes_about_sedol',
+  'company_codes_about_ticker',
+  'company_codes_relevance_cusip',
+  'company_codes_relevance_isin',
+  'company_codes_relevance_sedol',
+  'company_codes_relevance_ticker',
+];
+
 module.exports = {
   API_AVRO_FORMAT,
   API_CSV_FORMAT,
@@ -39,4 +62,5 @@ module.exports = {
   API_EXTRACTION_FILE_FORMATS,
   API_DATETIME_PERIODS,
   API_DATETIME_FIELDS,
+  API_GROUP_DIMENSIONS_FIELDS
 };

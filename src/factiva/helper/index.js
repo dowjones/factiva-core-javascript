@@ -96,6 +96,22 @@ const validateType = (varToValidate, expectedType, errorMessage) => {
 };
 
 /**
+ * Validates that a given options is  part of the valid options.
+ * @param {(string|number)} option - Variable to be validate
+ * @param {(string[]|number[])} validOptions - Type to variable expected
+ * @returns {(string|number)} Option to be validate
+ * @throws {RangeError} - when the given option is not part of the valid
+ */
+const validateOption = (option, validOptions) => {
+  if (!validOptions.includes(option.trim())) {
+    throw new RangeError(
+      `Option value ${option} is not within the allowed options: ${validOptions}`,
+    );
+  }
+  return option;
+};
+
+/**
  * Masks a string
  * @example
  * // return  ########ijkl
@@ -285,4 +301,5 @@ module.exports = {
   validateType,
   maskWord,
   getProxyConfiguration,
+  validateOption,
 };
