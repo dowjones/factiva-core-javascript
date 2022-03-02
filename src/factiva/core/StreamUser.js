@@ -2,14 +2,14 @@
  *  @module factiva/core/StreamUser
  */
 
-import { PubSub } from '@google-cloud/pubsub';
+import { PubSub, v1 } from '@google-cloud/pubsub';
 import helper from '../helper';
 import { UserKey } from './auth';
 import constants from './constants';
 import StreamResponse from './StreamReponse';
 
-const DEFAULT_HOST_DNA = `${constants.API_HOST}${constants.DEFAULT_HOST_DNA}`;
-const DEFAULT_HOST_ALPHA = `${constants.API_HOST}${constants.DNA_BASEPATH}`;
+const DEFAULT_HOST_DNA = `${constants.API_HOST}${constants.DNA_BASEPATH}`;
+const DEFAULT_HOST_ALPHA = `${constants.API_HOST}${constants.ALPHA_BASEPATH}`;
 
 /**
  * Class used to get stream info related by a user
@@ -47,7 +47,7 @@ class StreamUser extends UserKey {
   async getClientSubscription() {
     const credentials = await this.fetchCredentials();
     try {
-      const pubsubClient = new PubSub({
+      const pubsubClient = new v1.SubscriberClient({
         projectId: credentials.project_id,
         credentials,
       });

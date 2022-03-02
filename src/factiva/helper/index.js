@@ -4,9 +4,17 @@
 
 import axios from 'axios';
 import config from 'config';
-import { createWriteStream } from 'fs';
+import { existsSync, mkdirSync, createWriteStream } from 'fs';
+
 import createError from 'http-errors';
-import { REQUEST_DEFAULT_TYPE, REQUEST_STREAM_TYPE } from '../core/constants';
+import {
+  REQUEST_DEFAULT_TYPE,
+  REQUEST_STREAM_TYPE,
+  API_EXTRACTION_FILE_FORMATS,
+  TIMESTAMP_FIELDS,
+  MULTIVALUE_FIELDS_SPACE,
+  MULTIVALUE_FIELDS_COMMA,
+} from '../core/constants';
 
 /**
  * Object to be used by axios if proxy request is need
@@ -293,6 +301,101 @@ const apiSendRequest = async ({
   return response;
 };
 
+/**
+ *
+ * @param {string} fileUrl - URL of the file to be downloaded.
+ * @param {string} headers - Auth headers
+ * @param {string} fileName - Name to be used as local filename
+ * @param {string} fileExtension - Extension of the file
+ * @param {string} toSavePath - Path to be used to store the file
+ * @param {boolean} [addTimestamp=false] - Flag to determine if include timestamp info at the filename
+ * @returns {string} -  Dowloaded file path
+ */
+const downloadFile = async (
+  fileUrl,
+  headers,
+  fileName,
+  fileExtension,
+  toSavePath,
+  addTimestamp = false,
+) => {
+  validateOption(fileExtension, API_EXTRACTION_FILE_FORMATS);
+  createPathIfNotExist(toSavePath);
+  if (addTimestamp) {
+    const timeStamp = new Date().toISOString();
+    fileName = `${fileName}-${timeStamp}`;
+  }
+  const localFileName = join(toSavePath, `${fileName}.${fileExtension}`);
+
+  await sendRequest({
+    method: 'GET',
+    endpointUrl: fileUrl,
+    headers,
+    responseType: REQUEST_STREAM_TYPE,
+    fileName: localFileName,
+  });
+
+  return localFileName;
+};
+
+const getCurrentDate = () => {
+  const date = new Date();
+  const currentMonth = date.getMonth() + 1;
+  const month = currentMonth < 10 ? `0${currentMonth}` : currentMonth;
+  return `${date.getFullYear()}${month}${date.getDate()}`;
+};
+const isotsToMsts = (isodate) => {
+  const date = new Date(isodate);
+  return date.getTime() / 1000;
+};
+
+const formatTimestamps = (message) => {
+  TIMESTAMP_FIELDS.forEach((timeName) => {
+    if (Object.keys(message).includes(timeName)) {
+      message[timeName] = isotsToMsts(message[timeName]);
+    }
+    message['delivery_datetime'] = Date.now()/1000;
+  });
+  return message;
+};
+
+const multivalueToList = (fieldValue = null, sep = ',') => {
+  let retVal = [];
+  if (!fieldValue || fieldValue === '') {
+    retVal = [];
+  } else {
+    const allVals = fieldValue.split(sep);
+    allVals.forEach((value) => {
+      if (value !== '') {
+        retVal.push(value);
+      }
+    });
+  }
+  return retVal;
+};
+
+const formatMultivalues = (message) => {
+  MULTIVALUE_FIELDS_SPACE.forEach((fieldSpace) => {
+    if (Object.keys(message).includes(fieldSpace)) {
+      message[fieldSpace] = multivalueToList(message[fieldSpace], ' ');
+    }
+  });
+  MULTIVALUE_FIELDS_COMMA.forEach((fieldComma) => {
+    if (Object.keys(message).includes(fieldComma)) {
+      message[fieldComma] = multivalueToList(message[fieldComma]);
+    }
+  });
+  return message;
+};
+
+const createPathIfNotExist = (path) => {
+  if (!existsSync(path)) {
+    mkdirSync(path);
+  }
+};
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 /** Include common and helper functions */
 module.exports = {
   loadEnvVariable,
@@ -302,4 +405,10 @@ module.exports = {
   maskWord,
   getProxyConfiguration,
   validateOption,
+  downloadFile,
+  formatTimestamps,
+  formatMultivalues,
+  createPathIfNotExist,
+  getCurrentDate,
+  sleep,
 };

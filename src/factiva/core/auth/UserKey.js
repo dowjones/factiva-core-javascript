@@ -178,7 +178,7 @@ class UserKey {
    * @return {Boolean} True if the operation was completed successfully. Calculate value  is assigned to the cloud_token property.
    */
   async getCloudToken() {
-    const accountEndpoint = `${constants.API_HOST}${constants.API_ACCOUNT_STREAM_CREDENTIALS_BASEPATH}`;
+    const accountEndpoint = `${constants.API_HOST}${constants.ALPHA_BASEPATH}${constants.API_ACCOUNT_STREAM_CREDENTIALS_BASEPATH}`;
     const headers = this.getAuthenticationHeaders();
     const response = await helper.apiSendRequest({
       method: 'GET',

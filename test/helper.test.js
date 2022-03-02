@@ -1,15 +1,34 @@
 /* eslint-disable no-undef */
 const chai = require('chai');
 const config = require('config');
+const fs = require('fs');
 
 const { expect } = chai;
 
-const { helper } = require('../lib/factiva');
+const { helper, core } = require('../lib/factiva');
+const {
+  constants: {
+    API_HOST,
+    API_SNAPSHOTS_TAXONOMY_BASEPATH,
+    API_SNAPSHOTS_COMPANIES_PIT,
+    TICKER_COMPANY_IDENTIFIER,
+    DOWNLOAD_DEFAULT_FOLDER,
+  },
+} = core;
+const VALID_USER_KEY = helper.loadEnvVariable('userKey');
+
+const downloadPITLink = (identifier, fileFormat) =>
+  `${API_HOST}${API_SNAPSHOTS_TAXONOMY_BASEPATH}${API_SNAPSHOTS_COMPANIES_PIT}/${identifier}/${fileFormat}`;
+const headers = { 'user-key': VALID_USER_KEY };
 
 describe('factiva', () => {
   beforeEach(() => {
     delete config.proxy;
     delete config.userKey;
+  });
+
+  after(() => {
+    fs.rmdirSync(DOWNLOAD_DEFAULT_FOLDER, { recursive: true });
   });
 
   describe('use helper library', () => {
@@ -58,5 +77,32 @@ describe('factiva', () => {
       const options = helper.getProxyConfiguration();
       expect(options).to.have.property('auth');
     });
+    it('should download a csv file', async () => {
+      const fileFormat = 'csv';
+      const fileName = await helper.downloadFile(
+        downloadPITLink(TICKER_COMPANY_IDENTIFIER, fileFormat),
+        headers,
+        'demo',
+        fileFormat,
+        DOWNLOAD_DEFAULT_FOLDER,
+        true,
+      );
+      expect(fileName).to.be.a('string');
+    }).timeout(0);
+    it('should fail at download a diferent file', async () => {
+      const fileFormat = 'jpg';
+      try {
+        await helper.downloadFile(
+          downloadPITLink(TICKER_COMPANY_IDENTIFIER, fileFormat),
+          headers,
+          'demo',
+          fileFormat,
+          DOWNLOAD_DEFAULT_FOLDER,
+          true,
+        );
+      } catch (e) {
+        expect(e).to.be.instanceOf(RangeError);
+      }
+    }).timeout(0);
   });
 });
