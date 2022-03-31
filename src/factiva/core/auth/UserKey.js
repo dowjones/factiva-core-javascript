@@ -4,6 +4,7 @@
 
 import helper from '../../helper';
 import constants from '../constants';
+import FactivaLogger from '../FactivaLogger';
 
 /**
  * Extract Object
@@ -35,6 +36,9 @@ import constants from '../constants';
  * @property {string} user-key - User key
  */
 
+const {
+  LOGGER_LEVELS: { DEBUG, WARN },
+} = constants;
 /** Class used to get information about a user */
 class UserKey {
   /** Constructor
@@ -44,7 +48,7 @@ class UserKey {
     if (key instanceof UserKey) {
       return key;
     }
-
+    this.logger = new FactivaLogger(__filename);
     this.setApiKey(key);
     this.setInfoToDefault();
   }
@@ -66,6 +70,7 @@ class UserKey {
    * @return {TypeError} when the key len isn't valid
    */
   setApiKey(key) {
+    this.logger.log(DEBUG, `Set api key: ${key}`);
     const loadedKey = key || helper.loadEnvVariable('userKey');
     this.validateKey(loadedKey);
     this.key = loadedKey;
@@ -73,6 +78,7 @@ class UserKey {
 
   /** Set default information in the class */
   setInfoToDefault() {
+    this.logger.log(DEBUG, `Set user info default`);
     this.cloudToken = {};
     this.accountName = '';
     this.accountType = '';
@@ -94,8 +100,10 @@ class UserKey {
    * @param {boolean} requestInfo - Flag to determine if the info from the user needs to be found and set
    */
   async setInfo(requestInfo) {
+    this.logger.log(DEBUG, `Set api key info: ${requestInfo}`);
     if (!requestInfo) {
       console.log('Info not set up');
+      this.logger.log(WARN, 'Info not set up');
     } else {
       const accountEndpoint = `${constants.API_HOST}${constants.API_ACCOUNT_BASEPATH}/${this.key}`;
       const headers = this.getAuthenticationHeaders();
@@ -178,6 +186,7 @@ class UserKey {
    * @return {Boolean} True if the operation was completed successfully. Calculate value  is assigned to the cloud_token property.
    */
   async getCloudToken() {
+    this.logger.log(DEBUG, 'Getting Cloud Token');
     const accountEndpoint = `${constants.API_HOST}${constants.ALPHA_BASEPATH}${constants.API_ACCOUNT_STREAM_CREDENTIALS_BASEPATH}`;
     const headers = this.getAuthenticationHeaders();
     const response = await helper.apiSendRequest({
@@ -197,6 +206,7 @@ class UserKey {
    * @return {Extraction[]} Object containing the list of historical extractions for the account
    */
   async getExtractions() {
+    this.logger.log(DEBUG, 'Getting Extraction');
     const extractionsEndpoint = `${constants.API_HOST}${constants.API_EXTRACTIONS_BASEPATH}`;
     const headers = this.getAuthenticationHeaders();
     const response = await helper.apiSendRequest({
@@ -258,6 +268,7 @@ class UserKey {
    * @return {Stream[]} Object containing the list of historical extractions for the account
    */
   async getStreams() {
+    this.logger.log(DEBUG, 'Getting Streams');
     const extractionsEndpoint = `${constants.API_HOST}${constants.API_STREAMS_BASEPATH}`;
     const headers = this.getAuthenticationHeaders();
     const response = await helper.apiSendRequest({
@@ -353,6 +364,7 @@ class UserKey {
    * @throws {ReferenceError} if the credentials are not found
    */
   getAuthenticationHeaders() {
+    this.logger.log(DEBUG, 'Getting Auth Headers');
     if (this.key) {
       return { 'user-key': this.key };
     }

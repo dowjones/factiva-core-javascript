@@ -76,6 +76,11 @@ Javascript package with root definitions and dictionaries, to support other func
     # If auth is required
     PROXY_AUTH_USER=user
     PROXY_AUTH_PASSWORD=pass
+
+    #Files Directory. If are not set, the root directory path will be used
+    DOWNLOAD_FILES_DIR=/users/dowloadFiles
+    STREAM_FILES_DIR=/users/listenerFiles
+    LOG_FILES_DIR=/users/logFiles
   ```
 
 ## Build lib

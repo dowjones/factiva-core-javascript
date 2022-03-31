@@ -9,5 +9,8 @@
       "username": "PROXY_AUTH_USER",
       "password": "PROXY_AUTH_PASSWORD"
     }
-  }
+  },
+  "dowloadFilesDir": "DOWNLOAD_FILES_DIR",
+  "listenerFilesDir": "STREAM_FILES_DIR",
+  "logFilesDir": "LOG_FILES_DIR"
 }

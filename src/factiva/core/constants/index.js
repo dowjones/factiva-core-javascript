@@ -10,6 +10,7 @@ import snapshots from './snapshots';
 import streams from './streams';
 import request from './request';
 import listener from './listener';
+import logger from './logger';
 
 /** Constants used on the project */
 module.exports = {
@@ -21,4 +22,5 @@ module.exports = {
   ...streams,
   ...request,
   ...listener,
+  ...logger,
 };

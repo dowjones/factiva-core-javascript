@@ -9,5 +9,8 @@
       "username": "",
       "password": ""
     }
-  }
+  },
+  "dowloadFilesDir": "",
+  "listenerFilesDir": "",
+  "logFilesDir": ""
 }

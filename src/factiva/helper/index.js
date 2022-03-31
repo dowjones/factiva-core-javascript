@@ -5,6 +5,8 @@
 import axios from 'axios';
 import config from 'config';
 import { existsSync, mkdirSync, createWriteStream } from 'fs';
+import { join } from 'path';
+import FactivaLogger from '../core/FactivaLogger';
 
 import createError from 'http-errors';
 import {
@@ -14,7 +16,9 @@ import {
   TIMESTAMP_FIELDS,
   MULTIVALUE_FIELDS_SPACE,
   MULTIVALUE_FIELDS_COMMA,
+  LOGGER_LEVELS,
 } from '../core/constants';
+const { INFO, DEBUG, WARN, ERROR } = LOGGER_LEVELS;
 
 /**
  * Object to be used by axios if proxy request is need
@@ -53,10 +57,16 @@ import {
  * @returns {any} Value of the environment variables
  * @throws {ReferenceError} If the configKey not exist on the environment variables
  */
+
+const logger = new FactivaLogger('/helper.js');
+
 const loadEnvVariable = (configKey) => {
+  logger.log(DEBUG, `Loading environment variable: ${configKey}`);
   const tmpVal = config[configKey];
   if (!tmpVal) {
-    throw ReferenceError(`Environment Variable ${configKey} not found!`);
+    const errorMsg = `Environment Variable ${configKey} not found!`;
+    logger.log(ERROR, errorMsg);
+    throw ReferenceError(errorMsg);
   }
 
   return tmpVal;
@@ -68,10 +78,14 @@ const loadEnvVariable = (configKey) => {
  * @param {any} defaultValue - Default value
  * @returns {any} Value of the environment variables
  */
-const loadGenericEnvVariable = (envVarName, defaultValue) => {
+const loadDefaultEnvVariable = (envVarName, defaultValue) => {
   try {
     return loadEnvVariable(envVarName);
   } catch (e) {
+    logger.log(
+      WARN,
+      `Default environment variable ${envVarName}=${defaultValue}`,
+    );
     return defaultValue;
   }
 };
@@ -112,9 +126,9 @@ const validateType = (varToValidate, expectedType, errorMessage) => {
  */
 const validateOption = (option, validOptions) => {
   if (!validOptions.includes(option.trim())) {
-    throw new RangeError(
-      `Option value ${option} is not within the allowed options: ${validOptions}`,
-    );
+    const msg = `Option value ${option} is not within the allowed options: ${validOptions}`;
+    logger.log(ERROR, msg);
+    throw new RangeError(msg);
   }
   return option;
 };
@@ -148,24 +162,24 @@ const maskWord = (wordToMask, rightPadding = 4) => {
  * @throws {HttpError} Http error response
  */
 const handleError = (err) => {
+  let msg = '';
   if (err.response.status === 403) {
-    throw createError(403, 'Factiva API-Key does not exist or inactive.');
+    msg = 'Factiva API-Key does not exist or inactive.';
+    logger.log(WARN, msg);
+    throw createError(403, msg);
   }
 
   if (err.response.data.errors) {
     const errors = err.response.data.errors
       .map((error) => `${error.title}: ${error.detail}`)
       .join();
-    throw createError(
-      err.response.status,
-      `Unexpected API Error with message: ${err.response.statusText}: ${errors}`,
-    );
+    msg = `Unexpected API Error with message: ${err.response.statusText}: ${errors}`;
+    logger.log(WARN, msg);
+    throw createError(err.response.status, msg);
   }
-
-  throw createError(
-    err.response.status,
-    `Unexpected API Error with message: ${err.response.statusText}.`,
-  );
+  msg = `Unexpected API Error with message: ${err.response.statusText}.`;
+  logger.log(WARN, msg);
+  throw createError(err.response.status, msg);
 };
 
 /**
@@ -210,6 +224,7 @@ const sendRequest = async ({
   fileName = './tmp.csv',
 }) => {
   if (method === 'GET' && qsParams && typeof qsParams !== 'object') {
+    logger.log(ERROR, 'Unexpected qsParams value');
     throw ReferenceError('Unexpected qsParams value');
   }
 
@@ -220,6 +235,7 @@ const sendRequest = async ({
     } else if (typeof payload === 'string') {
       data = JSON.parse(payload);
     } else {
+      logger.log(ERROR, 'Unexpected payload value');
       throw Error('Unexpected payload value');
     }
   }
@@ -243,15 +259,18 @@ const sendRequest = async ({
       response.data.pipe(writer);
       return new Promise((resolve, reject) => {
         response.data.on('end', () => {
+          logger.log(INFO, `File dowloaded: ${endpointUrl}`);
           resolve();
         });
 
-        response.data.on('error', () => {
+        response.data.on(ERROR, () => {
+          this.logger.log(ERROR, 'Error on get streaming response');
           reject();
         });
       });
     } else {
       const response = await axios(request);
+      logger.log(INFO, `API Request End: ${endpointUrl}`);
       return response;
     }
   } catch (err) {
@@ -275,17 +294,28 @@ const apiSendRequest = async ({
   responseType = REQUEST_DEFAULT_TYPE,
   fileName = null,
 }) => {
+  logger.log(
+    INFO,
+    `Sending API Request: ${method} ${endpointUrl} - ${headers} - ${qsParams} - ${payload}`,
+  );
+  let errorMsg = '';
   if (!headers) {
-    throw ReferenceError('Headers for Factiva requests cannot be empty');
+    errorMsg = 'Headers for Factiva requests cannot be empty';
+    logger.log(ERROR, errorMsg);
+    throw ReferenceError(errorMsg);
   }
 
   if (typeof headers !== 'object') {
-    throw ReferenceError('Unexpected headers value');
+    errorMsg = 'Unexpected headers value';
+    logger.log(ERROR, errorMsg);
+    throw ReferenceError(errorMsg);
   }
 
   const methUpper = method.toUpperCase();
   if (methUpper !== 'POST' && methUpper !== 'GET' && methUpper !== 'DELETE') {
-    throw ReferenceError('Unexpected method value');
+    errorMsg = 'Unexpected method value';
+    logger.log(ERROR, errorMsg);
+    throw ReferenceError(errorMsg);
   }
 
   const response = await sendRequest({
@@ -297,7 +327,6 @@ const apiSendRequest = async ({
     responseType,
     fileName,
   });
-
   return response;
 };
 
@@ -319,6 +348,10 @@ const downloadFile = async (
   toSavePath,
   addTimestamp = false,
 ) => {
+  logger.log(
+    INFO,
+    `Downloading file: ${fileUrl} - ${fileName} - ${fileExtension}`,
+  );
   validateOption(fileExtension, API_EXTRACTION_FILE_FORMATS);
   createPathIfNotExist(toSavePath);
   if (addTimestamp) {
@@ -334,15 +367,13 @@ const downloadFile = async (
     responseType: REQUEST_STREAM_TYPE,
     fileName: localFileName,
   });
-
   return localFileName;
 };
 
 const getCurrentDate = () => {
   const date = new Date();
-  const currentMonth = date.getMonth() + 1;
-  const month = currentMonth < 10 ? `0${currentMonth}` : currentMonth;
-  return `${date.getFullYear()}${month}${date.getDate()}`;
+  const _month = date.getMonth() + 1;
+  return `${date.getFullYear()}${fmtShortDate(_month)}${date.getDate()}`;
 };
 const isotsToMsts = (isodate) => {
   const date = new Date(isodate);
@@ -354,8 +385,18 @@ const formatTimestamps = (message) => {
     if (Object.keys(message).includes(timeName)) {
       message[timeName] = isotsToMsts(message[timeName]);
     }
-    message['delivery_datetime'] = Date.now()/1000;
   });
+  message['delivery_datetime'] = Date.now() / 1000;
+  return message;
+};
+
+const formatTimestampsMongoDB = (message) => {
+  TIMESTAMP_FIELDS.forEach((timeName) => {
+    if (Object.keys(message).includes(timeName)) {
+      message[timeName] = new Date(message[timeName]);
+    }
+  });
+  message['delivery_datetime'] = new Date();
   return message;
 };
 
@@ -390,17 +431,28 @@ const formatMultivalues = (message) => {
 
 const createPathIfNotExist = (path) => {
   if (!existsSync(path)) {
+    logger.log(DEBUG, `Creating directory: ${path}`);
     mkdirSync(path);
   }
 };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+const getLogDateFormat = () => {
+  const date = new Date();
+  const _month = date.getMonth() + 1;
+  return `${fmtShortDate(date.getDate())}-${fmtShortDate(
+    _month,
+  )}-${date.getFullYear()}`;
+};
+
+const fmtShortDate = (dateNum) => (dateNum < 10 ? `0${dateNum}` : dateNum);
+
 /** Include common and helper functions */
 module.exports = {
   loadEnvVariable,
   apiSendRequest,
-  loadGenericEnvVariable,
+  loadDefaultEnvVariable,
   validateType,
   maskWord,
   getProxyConfiguration,
@@ -411,4 +463,6 @@ module.exports = {
   createPathIfNotExist,
   getCurrentDate,
   sleep,
+  getLogDateFormat,
+  formatTimestampsMongoDB,
 };

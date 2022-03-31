@@ -22,7 +22,8 @@
     "config": "^3.3.6",
     "dataframe-js": "^1.4.4",
     "http-errors": "^1.6.3",
-    "restify": "^8.6.0"
+    "restify": "^8.6.0",
+    "simple-node-logger": "^21.8.12"
   },
   "devDependencies": {
     "@babel/cli": "^7.14.5",

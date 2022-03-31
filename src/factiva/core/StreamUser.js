@@ -7,9 +7,14 @@ import helper from '../helper';
 import { UserKey } from './auth';
 import constants from './constants';
 import StreamResponse from './StreamReponse';
+import FactivaLogger from './FactivaLogger';
 
 const DEFAULT_HOST_DNA = `${constants.API_HOST}${constants.DNA_BASEPATH}`;
 const DEFAULT_HOST_ALPHA = `${constants.API_HOST}${constants.ALPHA_BASEPATH}`;
+
+const {
+  LOGGER_LEVELS: { DEBUG },
+} = constants;
 
 /**
  * Class used to get stream info related by a user
@@ -22,6 +27,7 @@ class StreamUser extends UserKey {
    */
   constructor(key, requestInfo) {
     super(key, requestInfo);
+    this.logger = new FactivaLogger(__filename);
   }
 
   /**
@@ -29,6 +35,7 @@ class StreamUser extends UserKey {
    * @returns {StreamResponse} objects which contains stream information
    */
   async getStreams() {
+    this.logger.log(DEBUG, 'Getting streams');
     const headers = this.getAuthenticationHeaders();
     const response = await helper.apiSendRequest({
       method: 'GET',
@@ -45,6 +52,7 @@ class StreamUser extends UserKey {
    * @throws {URIError} if something unexpected happens while creating the client
    */
   async getClientSubscription() {
+    this.logger.log(DEBUG, 'Getting client subscription');
     const credentials = await this.fetchCredentials();
     try {
       const pubsubClient = new v1.SubscriberClient({
@@ -67,6 +75,7 @@ class StreamUser extends UserKey {
    * @throws {URIError} if the credentials cannot be parsed
    */
   async fetchCredentials() {
+    this.logger.log(DEBUG, 'Fetching credentials');
     const headers = this.getAuthenticationHeaders();
     const uri = StreamUser.getUriContext(headers);
     const response = await helper.apiSendRequest({
